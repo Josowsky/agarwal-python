@@ -1,9 +1,12 @@
+from Node import Node
 import math
+
 
 def getMiddleElement(array):
     if len(array) > 0:
         return int(math.floor(len(array) / 2))
     return -1
+
 
 def buildTree(elements):
     middleElementIndex = getMiddleElement(elements)
@@ -19,11 +22,11 @@ def buildTree(elements):
     if middleElementIndex + 1 < len(elements):
         rightChild = buildTree(elements[middleElementIndex + 1:])
 
-    return {
-        'Node': elements[middleElementIndex],
-        'LeftChild': leftChild,
-        'RightChild': rightChild
-    }
+    return Node(
+        elements[middleElementIndex],
+        leftChild,
+        rightChild,
+    )
 
 
 def getBinaryTree(numberOfLeafs):
