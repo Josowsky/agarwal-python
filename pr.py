@@ -6,7 +6,7 @@ from utils.getBinaryTree import getBinaryTree
 logging.basicConfig(level=logging.INFO)
 LOCK = threading.Lock()
 
-NUMBER_OF_HOSTS = 10
+NUMBER_OF_HOSTS = 16
 
 
 def run(arg):
