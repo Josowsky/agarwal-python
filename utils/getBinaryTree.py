@@ -11,9 +11,6 @@ def getMiddleElement(array):
 def buildTree(elements):
     middleElementIndex = getMiddleElement(elements)
 
-    print 'Elements: {}'.format(elements)
-    print 'Element in middle: {}'.format(elements[middleElementIndex])
-    
     leftChild = None
     if middleElementIndex > 0:
         leftChild = buildTree(elements[0:middleElementIndex])
