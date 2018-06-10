@@ -1,33 +1,26 @@
-import logging
-import threading
-import pprint
+from mpi4py import MPI
 
 from utils.printTree import printTree
-from utils.getBinaryTree import getBinaryTree
+from utils.getBinaryTree import getBinaryTree, getMiddleElement
 from utils.getQuorum import getQuorum
 
-logging.basicConfig(level=logging.INFO)
-LOCK = threading.Lock()
+# Initialize mpi
+mpiInterface = MPI.COMM_WORLD
 
 # Constants
-NUMBER_OF_HOSTS = 10
+NUMBER_OF_HOSTS = mpiInterface.Get_size()
+HOST_ID = mpiInterface.Get_rank()
 
+# Create hosts vector
+hosts = range(0, NUMBER_OF_HOSTS)
 
-# Main execution function (probably will get depracated with MPI arival)
-def run(arg):
-    if LOCK.acquire(False): # Non-blocking -- return whether we got it
-        logging.info('Got the lock! {}'.format(arg))
-        LOCK.release()
-    else:
-        logging.info("Couldn't get the lock. Maybe next time")
-
-
-threads = []
-for i in range(NUMBER_OF_HOSTS):
-	threads.append(threading.Thread(target=run, args=[i]))
+# Put our process in the middle of hosts vector
+middleElementIndex = getMiddleElement(hosts)
+hosts[HOST_ID] = hosts[middleElementIndex]
+hosts[middleElementIndex] = HOST_ID
 
 # Create binary tree
-binary_tree = getBinaryTree(NUMBER_OF_HOSTS)
+binary_tree = getBinaryTree(hosts)
 
 # Print binary tree
 print '===== GENERATED BINARY TREE ===='
@@ -35,7 +28,8 @@ printTree(binary_tree)
 print '=====   =====   ===== \n\n'
 
 # Get tree structured quorum
-print getQuorum(binary_tree)
+print '===== QUORUM ====='
+print '{}\n'.format(getQuorum(binary_tree))
 
 # for thread in threads:
 #    thread.start()
