@@ -1,0 +1,1 @@
+mpiexec -n 16 --hostfile hosts python agarwal.py
