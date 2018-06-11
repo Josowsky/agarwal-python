@@ -39,6 +39,7 @@ class MpiInterface:
             self.inquire(newRequest['senderId'])
 
             # Wait for Relinquish or Yield
+            print self.requestQueue
             messageListener = self.COMM.irecv(source=self.requestQueue[0]['senderID'], tag=MPI.ANY_TAG)
             message = messageListener.wait()
 
@@ -73,8 +74,6 @@ class MpiInterface:
             self.relinquish()
 
     def listen(self):
-        self.reply()
-
         if self.COMM.iprobe(source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG):
             messageListener = self.COMM.irecv(source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG)
             message = messageListener.wait()
@@ -111,9 +110,7 @@ class MpiInterface:
                 self.requestQueue[requesterIndexInQueue] = self.requestQueue[0]
                 self.requestQueue[0] = requester
 
-                self.reply()
-                
-
+        self.reply()
 
     def reply(self):
         if len(self.requestQueue) > 0:
