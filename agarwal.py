@@ -1,4 +1,5 @@
 import time
+from random import shuffle
 
 from utils.mpi import MpiInterface as MPI
 from utils.printTree import printTree
@@ -16,10 +17,11 @@ HOST_ID = mpiInterface.HOST_ID
 # # Create hosts vector
 hosts = range(0, NUMBER_OF_HOSTS)
 
-# Put our process in the middle of hosts vector
+# Put our process in the middle of hosts vector and shiffle it
 middleElementIndex = getMiddleElement(hosts)
-hosts[HOST_ID] = hosts[middleElementIndex]
-hosts[middleElementIndex] = HOST_ID
+del hosts[HOST_ID]
+shuffle(hosts)
+hosts.insert(middleElementIndex, HOST_ID)
 
 # Create binary tree
 binary_tree = getBinaryTree(hosts)
@@ -43,7 +45,7 @@ mpiInterface.replySet = replySet
 # print '{}\n'.format(quorumSet)
 
 # Request access to CS
-if HOST_ID == 1:
+if HOST_ID == 1 or HOST_ID == 7 or HOST_ID == 12 or HOST_ID == 15:
     mpiInterface.request()
 
 while True:
