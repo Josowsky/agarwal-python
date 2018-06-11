@@ -13,6 +13,7 @@ MESSAGE_YIELD = 5
 class MpiInterface:
     def __init__(self):
         self.COMM = MPI.COMM_WORLD
+        self.NUMBER_OF_HOSTS = self.COMM.Get_size()
         self.HOST_ID = self.COMM.Get_rank()
 
         # List of nodes that requested access to the CS
