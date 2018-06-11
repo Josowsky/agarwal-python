@@ -1,6 +1,7 @@
 from mpi4py import MPI
 import time
 
+# Change this flag to disable message logging
 LOG_MESSAGES = True
 
 MESSAGE_REQUEST = 1
@@ -12,7 +13,6 @@ MESSAGE_YIELD = 5
 class MpiInterface:
     def __init__(self):
         self.COMM = MPI.COMM_WORLD
-        self.NUMBER_OF_HOSTS = self.COMM.Get_size()
         self.HOST_ID = self.COMM.Get_rank()
 
         # List of nodes that requested access to the CS
@@ -21,7 +21,7 @@ class MpiInterface:
         # Process that curently has my reply
         self.activeReplyReceiver = None
 
-        # List of necessary replys to required to enter CS
+        # List of necessary replys required to enter CS
         # If this list is empty then you can enter CS
         self.replySet = []
 
