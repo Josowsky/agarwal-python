@@ -1,6 +1,8 @@
 from mpi4py import MPI
 import time
 
+LOG_MESSAGES = True
+
 MESSAGE_REQUEST = 1
 MESSAGE_REPLY = 2
 MESSAGE_RELINQUISH = 3
@@ -64,8 +66,8 @@ class MpiInterface:
             print '===== CS START ===== {}'.format(self.HOST_ID)
             print 'Working hard... | {}'.format(self.HOST_ID)
             time.sleep(3)
-            self.relinquish()
             print '----- CS DONE ----- by {}'.format(self.HOST_ID)
+            self.relinquish()
 
     def listen(self):
         self.reply()
@@ -117,7 +119,7 @@ class MpiInterface:
             if replyReceiver == self.activeReplyReceiver:
                 return
 
-            #print 'Reply: {} allows {} to enter CS'.format(self.HOST_ID, replyReceiver['senderId'])
+            if LOG_MESSAGES: print 'Reply: {} allows {} to enter CS'.format(self.HOST_ID, replyReceiver['senderId'])
 
             data = {
                 'tag': MESSAGE_REPLY,
@@ -132,7 +134,7 @@ class MpiInterface:
             if receiverId == self.HOST_ID:
                 continue
 
-            #print 'Sending REQUEST from {} to {}'.format(self.HOST_ID, receiverId)
+            if LOG_MESSAGES: print 'Sending REQUEST from {} to {}'.format(self.HOST_ID, receiverId)
             data = {
                 'tag': MESSAGE_REQUEST,
                 'senderId': self.HOST_ID,
@@ -146,7 +148,7 @@ class MpiInterface:
             if receiverId == self.HOST_ID:
                 continue
 
-            #print 'Sending RELINQUISH from {} to {}'.format(self.HOST_ID, receiverId)
+            if LOG_MESSAGES: print 'Sending RELINQUISH from {} to {}'.format(self.HOST_ID, receiverId)
             data = {
                 'tag': MESSAGE_RELINQUISH,
                 'senderId': self.HOST_ID,
@@ -157,7 +159,7 @@ class MpiInterface:
     def inquire(self, requesterId):
         receiver = self.requestQueue[0]
 
-        #print 'Sending INQUIRE from {} to {} in behalf of {}'.format(self.HOST_ID, receiver['senderId'], requesterId)
+        if LOG_MESSAGES: print 'Sending INQUIRE from {} to {} in behalf of {}'.format(self.HOST_ID, receiver['senderId'], requesterId)
         data = {
             'tag': MESSAGE_INQUIRE,
             'senderId': self.HOST_ID,
@@ -167,7 +169,7 @@ class MpiInterface:
         self.COMM.isend(data, dest=receiver['senderId'], tag=MESSAGE_INQUIRE)
 
     def yyield(self, destination, requesterId):
-        #print 'Sending YIELD from {} to {}'.format(self.HOST_ID, destination)
+        if LOG_MESSAGES: print 'Sending YIELD from {} to {}'.format(self.HOST_ID, destination)
         data = {
             'tag': MESSAGE_YIELD,
             'senderId': self.HOST_ID,
