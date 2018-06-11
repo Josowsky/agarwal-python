@@ -34,9 +34,9 @@ quorumSet = getQuorum(binary_tree)
 mpiInterface.quorumSet = quorumSet
 
 # Prepare set of proces that need to accept request
-replaySet = quorumSet[:]
-replaySet.remove(HOST_ID)
-mpiInterface.replaySet = replaySet
+replySet = quorumSet[:]
+replySet.remove(HOST_ID)
+mpiInterface.replySet = replySet
 
 # Print tree structured quorum
 # print '===== QUORUM ====='
