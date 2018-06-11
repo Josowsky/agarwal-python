@@ -1,5 +1,5 @@
 import time
-from random import shuffle
+import math
 
 from utils.mpi import MpiInterface as MPI
 from utils.printTree import printTree
@@ -14,25 +14,37 @@ REFRESH_INTERVAL = 0.5
 NUMBER_OF_HOSTS = mpiInterface.NUMBER_OF_HOSTS
 HOST_ID = mpiInterface.HOST_ID
 
-# # Create hosts vector
+# Create hosts vector
 hosts = range(0, NUMBER_OF_HOSTS)
-
-# Put our process in the middle of hosts vector and shiffle it
-middleElementIndex = getMiddleElement(hosts)
-del hosts[HOST_ID]
-shuffle(hosts)
-hosts.insert(middleElementIndex, HOST_ID)
 
 # Create binary tree
 binary_tree = getBinaryTree(hosts)
 
 # Print binary tree
-# print '===== GENERATED BINARY TREE ===='
-# printTree(binary_tree)
-# print '=====   =====   ===== \n\n'
+if HOST_ID == 0:
+    print '===== GENERATED BINARY TREE ===='
+    printTree(binary_tree)
+    print '=====   =====   ===== \n\n'
 
-# Get tree structured quorum
-quorumSet = getQuorum(binary_tree)
+# Generate tree structured quorums
+quorums = []
+no = 2 * math.ceil((math.log(NUMBER_OF_HOSTS + 1, 2) - 1))
+
+for i in range(0, int(no)):
+    # Generate series of turns for getQuorum algorithm
+    decisionVector = str(bin(i))
+    decisionVector = decisionVector.replace('0b', '')
+
+    quorum = getQuorum(binary_tree, decisionVector)
+    quorums.append(quorum)
+
+# Find my quorum
+quorumSet = None
+for quorum in quorums:
+    if HOST_ID in quorum:
+        quorumSet = quorum
+        break
+
 mpiInterface.quorumSet = quorumSet
 
 # Prepare set of proces that need to accept request
@@ -42,11 +54,13 @@ mpiInterface.replySet = replySet
 
 # Print tree structured quorum
 # print '===== QUORUM ====='
-# print '{}\n'.format(quorumSet)
+print '{} my quorum {}\n'.format(HOST_ID, quorumSet)
+
+mpiInterface.barrier()
 
 # Request access to CS
-if HOST_ID < 4:
-    mpiInterface.request()
+# if HOST_ID < 4:
+mpiInterface.request()
 
 while True:
     mpiInterface.listen()

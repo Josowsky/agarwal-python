@@ -180,3 +180,6 @@ class MpiInterface:
         }
 
         self.COMM.isend(data, dest=destination, tag=MESSAGE_YIELD)
+
+    def barrier(self):
+        self.COMM.Barrier()
