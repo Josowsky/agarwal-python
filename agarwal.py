@@ -45,7 +45,7 @@ mpiInterface.replySet = replySet
 # print '{}\n'.format(quorumSet)
 
 # Request access to CS
-if HOST_ID == 1 or HOST_ID == 7 or HOST_ID == 12 or HOST_ID == 15:
+if HOST_ID < 4:
     mpiInterface.request()
 
 while True:

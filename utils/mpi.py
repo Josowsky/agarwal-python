@@ -43,7 +43,7 @@ class MpiInterface:
             message = messageListener.wait()
 
             if message['tag'] == MESSAGE_RELINQUISH or message['tag'] == MESSAGE_YIELD:
-                self.requestQueue[0] = newRequest
+                self.requestQueue.insert(0, newRequest)
                 self.activeReplyReceiver = newRequest
                 return
 
@@ -61,7 +61,9 @@ class MpiInterface:
 
     def saveReply(self, reply):
         replySenderId = reply['senderId']
-        self.replySet.remove(replySenderId)
+
+        if replySenderId in self.replySet:
+            self.replySet.remove(replySenderId)
 
         if len(self.replySet) == 0:
             print '===== CS START ===== {}'.format(self.HOST_ID)
