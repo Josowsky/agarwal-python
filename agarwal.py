@@ -31,11 +31,12 @@ binary_tree = getBinaryTree(hosts)
 
 # Get tree structured quorum
 quorumSet = getQuorum(binary_tree)
+mpiInterface.quorumSet = quorumSet
 
 # Prepare set of proces that need to accept request
-replaySet = quorumSet
+replaySet = quorumSet[:]
 replaySet.remove(HOST_ID)
-mpiInterface.quorumSet = replaySet
+mpiInterface.replaySet = replaySet
 
 # Print tree structured quorum
 # print '===== QUORUM ====='
@@ -43,7 +44,7 @@ mpiInterface.quorumSet = replaySet
 
 # Request access to CS
 if HOST_ID == 1:
-    mpiInterface.request(HOST_ID, quorumSet)
+    mpiInterface.request()
 
 while True:
     mpiInterface.listen()

@@ -3,6 +3,7 @@ import time
 
 MESSAGE_REQUEST = 1
 MESSAGE_REPLY = 2
+MESSAGE_RELINQUISH = 3
 
 class MpiInterface:
     def __init__(self):
@@ -11,6 +12,7 @@ class MpiInterface:
         self.HOST_ID = self.COMM.Get_rank()
 
         self.requestQueue = []
+        self.replaySet = []
         self.quorumSet = []
 
     def addToRequestQueue(self, newRequest):
@@ -28,10 +30,13 @@ class MpiInterface:
 
     def saveReply(self, reply):
         replySenderId = reply['senderId']
-        self.quorumSet.remove(replySenderId)
+        self.replaySet.remove(replySenderId)
 
-        if len(self.quorumSet) == 0:
+        if len(self.replaySet) == 0:
             print 'I can enter the CS!! {}'.format(self.HOST_ID)
+            print 'Working hard... | {}'.format(self.HOST_ID)
+            time.sleep(3)
+            self.relinquish()
 
     def listen(self):
         self.reply()
@@ -49,6 +54,9 @@ class MpiInterface:
             if message['tag'] == MESSAGE_REPLY:
                 self.saveReply(message)
 
+            if message['tag'] == MESSAGE_RELINQUISH:
+                self.requestQueue.pop(0)
+
     def reply(self):
         if len(self.requestQueue) > 0:
             replyReceiver = self.requestQueue.pop(0)
@@ -57,21 +65,33 @@ class MpiInterface:
             data = {
                 'tag': MESSAGE_REPLY,
                 'senderId': self.HOST_ID,
-                'timestamp': time.time()
             }
 
             self.COMM.isend(data, dest=replyReceiver['senderId'], tag=MESSAGE_REPLY)
 
-    def request(self, senderId, quorumSet):
-        for receiverId in quorumSet:
+    def request(self):
+        for receiverId in self.replaySet:
             if receiverId == self.HOST_ID:
                 continue
 
-            print 'Sending REQUEST from {} to {}'.format(senderId, receiverId)
+            print 'Sending REQUEST from {} to {}'.format(self.HOST_ID, receiverId)
             data = {
                 'tag': MESSAGE_REQUEST,
-                'senderId': senderId,
+                'senderId': self.HOST_ID,
                 'timestamp': time.time()
+            }
+
+            self.COMM.isend(data, dest=receiverId, tag=MESSAGE_REQUEST)
+
+    def relinquish(self):
+        for receiverId in self.quorumSet:
+            if receiverId == self.HOST_ID:
+                continue
+
+            print 'Sending RELINQUISH from {} to {}'.format(self.HOST_ID, receiverId)
+            data = {
+                'tag': MESSAGE_RELINQUISH,
+                'senderId': self.HOST_ID,
             }
 
             self.COMM.isend(data, dest=receiverId, tag=MESSAGE_REQUEST)
