@@ -27,36 +27,45 @@ class MpiInterface:
         self.quorumSet = []
 
     def addToRequestQueue(self, newRequest):
-        newRequestIndexInQueue = None
-
         if len(self.requestQueue) == 0:
-            newRequestIndexInQueue = 0
             self.requestQueue = [newRequest]
             return
 
+        # If new request has smaller timestamp than head of queue, send inquire
+        if newRequest['timestamp'] < self.requestQueue[0]['timestamp']:
+            self.inquire(newRequest['senderId'])
+
+            # Wait for Relinquish or Yield
+            messageListener = self.COMM.irecv(source=self.requestQueue[0]['senderID'], tag=MPI.ANY_TAG)
+            message = messageListener.wait()
+
+            if message['tag'] == MESSAGE_RELINQUISH or message['tag'] == MESSAGE_YIELD:
+                self.requestQueue[0] = newRequest
+                self.activeReplyReceiver = newRequest
+                return
+
+        # Insert new request to request queue sorted by timestamp ascending
+        requestQueueCopy = self.requestQueue[:]
         for index, request in enumerate(self.requestQueue):
             if request['timestamp'] > newRequest['timestamp']:
-                newRequestIndexInQueue = index
-                self.requestQueue.insert(index, newRequest)
+                requestQueueCopy.insert(index, newRequest)
                 break
             
-            if index == len(self.requestQueue - 1):
-                newRequestIndexInQueue = len(self.requestQueue)
-                self.requestQueue.append(newRequest)
+            if index == len(self.requestQueue) - 1:
+                requestQueueCopy.append(newRequest)
 
-        # If new request has smaller timestamp, send inquire
-        if newRequestIndexInQueue > 0:
-            self.inquire()
+        self.requestQueue = requestQueueCopy[:]
 
     def saveReply(self, reply):
         replySenderId = reply['senderId']
         self.replySet.remove(replySenderId)
 
         if len(self.replySet) == 0:
-            print 'I can enter the CS!! {}'.format(self.HOST_ID)
+            print '===== CS START ===== {}'.format(self.HOST_ID)
             print 'Working hard... | {}'.format(self.HOST_ID)
             time.sleep(3)
             self.relinquish()
+            print '----- CS DONE ----- by {}'.format(self.HOST_ID)
 
     def listen(self):
         self.reply()
@@ -76,10 +85,29 @@ class MpiInterface:
 
             if message['tag'] == MESSAGE_RELINQUISH:
                 self.requestQueue.pop(0)
+                self.activeReplyReceiver = None
 
             if message['tag'] == MESSAGE_INQUIRE:
                 if len(self.replySet) > 0:
-                    pass
+                    self.yyield(message['senderId'], message['requesterId'])
+            
+            if message['tag'] == MESSAGE_YIELD:
+                requester = None
+                requesterIndexInQueue = None
+
+                for index, request in enumerate(self.requestQueue):
+                    if request['senderId'] == message['requesterId']:
+                        requester = request
+                        requesterIndexInQueue = index
+
+                if not requester:
+                    return
+
+                self.requestQueue[requesterIndexInQueue] = self.requestQueue[0]
+                self.requestQueue[0] = requester
+
+                self.reply()
+                
 
 
     def reply(self):
@@ -89,7 +117,7 @@ class MpiInterface:
             if replyReceiver == self.activeReplyReceiver:
                 return
 
-            print 'Reply: {} allows {} to enter CS'.format(self.HOST_ID, replyReceiver['senderId'])
+            #print 'Reply: {} allows {} to enter CS'.format(self.HOST_ID, replyReceiver['senderId'])
 
             data = {
                 'tag': MESSAGE_REPLY,
@@ -104,7 +132,7 @@ class MpiInterface:
             if receiverId == self.HOST_ID:
                 continue
 
-            print 'Sending REQUEST from {} to {}'.format(self.HOST_ID, receiverId)
+            #print 'Sending REQUEST from {} to {}'.format(self.HOST_ID, receiverId)
             data = {
                 'tag': MESSAGE_REQUEST,
                 'senderId': self.HOST_ID,
@@ -118,7 +146,7 @@ class MpiInterface:
             if receiverId == self.HOST_ID:
                 continue
 
-            print 'Sending RELINQUISH from {} to {}'.format(self.HOST_ID, receiverId)
+            #print 'Sending RELINQUISH from {} to {}'.format(self.HOST_ID, receiverId)
             data = {
                 'tag': MESSAGE_RELINQUISH,
                 'senderId': self.HOST_ID,
@@ -126,22 +154,24 @@ class MpiInterface:
 
             self.COMM.isend(data, dest=receiverId, tag=MESSAGE_REQUEST)
     
-    def inquire(self):
+    def inquire(self, requesterId):
         receiver = self.requestQueue[0]
 
-        print 'Sending INQUIRE from {} to {}'.format(self.HOST_ID, receiver['senderId)'])
+        #print 'Sending INQUIRE from {} to {} in behalf of {}'.format(self.HOST_ID, receiver['senderId'], requesterId)
         data = {
             'tag': MESSAGE_INQUIRE,
             'senderId': self.HOST_ID,
+            'requesterId': requesterId,
         }
 
         self.COMM.isend(data, dest=receiver['senderId'], tag=MESSAGE_INQUIRE)
 
-    def yyield(self, destination):
-        print 'Sending YIELD from {} to {}'.format(self.HOST_ID, destination)
+    def yyield(self, destination, requesterId):
+        #print 'Sending YIELD from {} to {}'.format(self.HOST_ID, destination)
         data = {
             'tag': MESSAGE_YIELD,
             'senderId': self.HOST_ID,
+            'requesterId': requesterId,
         }
 
         self.COMM.isend(data, dest=destination, tag=MESSAGE_YIELD)
