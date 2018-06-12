@@ -1,7 +1,7 @@
 from mpi4py import MPI
 import time
 
-# Change this flag to disable message logging
+ASK_MYSELF = False
 LOG_MESSAGES = True
 
 MESSAGE_REQUEST = 1
@@ -39,8 +39,7 @@ class MpiInterface:
             self.inquire(newRequest['senderId'])
 
             # Wait for Relinquish or Yield
-            print self.requestQueue
-            messageListener = self.COMM.irecv(source=self.requestQueue[0]['senderID'], tag=MPI.ANY_TAG)
+            messageListener = self.COMM.irecv(source=self.requestQueue[0]['senderId'], tag=MPI.ANY_TAG)
             message = messageListener.wait()
 
             if message['tag'] == MESSAGE_RELINQUISH or message['tag'] == MESSAGE_YIELD:
@@ -131,7 +130,7 @@ class MpiInterface:
 
     def request(self):
         for receiverId in self.replySet:
-            if receiverId == self.HOST_ID:
+            if receiverId == self.HOST_ID and not ASK_MYSELF:
                 continue
 
             if LOG_MESSAGES: print 'Sending REQUEST from {} to {}'.format(self.HOST_ID, receiverId)

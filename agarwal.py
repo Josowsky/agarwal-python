@@ -6,6 +6,10 @@ from utils.printTree import printTree
 from utils.getBinaryTree import getBinaryTree, getMiddleElement
 from utils.getQuorum import getQuorum
 
+ASK_MYSELF = False
+LOG_BINARY_TREE = False
+LOG_QUORUM = True
+
 # Initialize mpi
 mpiInterface = MPI()
 
@@ -21,16 +25,16 @@ hosts = range(0, NUMBER_OF_HOSTS)
 binary_tree = getBinaryTree(hosts)
 
 # Print binary tree
-if HOST_ID == 0:
+if HOST_ID == 0 and LOG_BINARY_TREE:
     print '===== GENERATED BINARY TREE ===='
     printTree(binary_tree)
     print '=====   =====   ===== \n\n'
 
 # Generate tree structured quorums
 quorums = []
-no = 2 * math.ceil((math.log(NUMBER_OF_HOSTS + 1, 2) - 1))
+treeHeight = 2 * math.ceil((math.log(NUMBER_OF_HOSTS + 1, 2) - 1))
 
-for i in range(0, int(no)):
+for i in range(0, int(treeHeight)):
     # Generate series of turns for getQuorum algorithm
     decisionVector = str(bin(i))
     decisionVector = decisionVector.replace('0b', '')
@@ -50,17 +54,17 @@ mpiInterface.quorumSet = quorumSet
 # Prepare set of proces that need to accept request
 replySet = quorumSet[:]
 replySet.remove(HOST_ID)
-mpiInterface.replySet = replySet
+mpiInterface.replySet = quorumSet[:] if ASK_MYSELF else replySet
 
 # Print tree structured quorum
 # print '===== QUORUM ====='
-print '{} my quorum {}\n'.format(HOST_ID, quorumSet)
-
-mpiInterface.barrier()
+if LOG_QUORUM:
+    print '{} my quorum {}\n'.format(HOST_ID, quorumSet)
+    mpiInterface.barrier()
 
 # Request access to CS
-# if HOST_ID < 4:
-mpiInterface.request()
+if HOST_ID < 4:
+    mpiInterface.request()
 
 while True:
     mpiInterface.listen()
